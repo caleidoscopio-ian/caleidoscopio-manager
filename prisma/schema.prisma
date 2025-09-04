@@ -1,0 +1,127 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================
+// SISTEMA 1 - CÉREBRO CENTRAL (MULTI-TENANT)
+// =====================================
+
+// Modelo para representar cada clínica/tenant
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String   // Nome da clínica
+  slug      String   @unique // Identificador único (ex: "clinica-sp")
+  domain    String?  // Domínio personalizado opcional
+  status    TenantStatus @default(ACTIVE)
+  
+  // Plano e licenciamento
+  planId    String
+  plan      Plan     @relation(fields: [planId], references: [id])
+  maxUsers  Int      @default(10) // Limite de usuários
+  
+  // Metadados
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relacionamentos
+  users     User[]
+  
+  @@map("tenants")
+}
+
+// Planos disponíveis
+model Plan {
+  id          String   @id @default(cuid())
+  name        String   // Ex: "Básico", "Premium", "Enterprise"
+  slug        String   @unique
+  description String?
+  maxUsers    Int      // Limite de usuários por plano
+  features    String[] // Array de features habilitadas
+  price       Decimal? // Preço mensal
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relacionamentos
+  tenants     Tenant[]
+  
+  @@map("plans")
+}
+
+// Usuários globais (Super Admin) e por tenant
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String   // Hash da senha
+  
+  // Multi-tenancy
+  tenantId  String?  // NULL para super admins
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Controle de acesso
+  role      UserRole @default(USER)
+  isActive  Boolean  @default(true)
+  
+  // Dados de acesso
+  lastLogin DateTime?
+  
+  // Metadados
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relacionamentos
+  sessions  Session[]
+  
+  @@map("users")
+}
+
+// Sessões de usuário
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  
+  createdAt DateTime @default(now())
+  
+  @@map("sessions")
+}
+
+// Logs de auditoria
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String?  // NULL para ações globais
+  userId    String?  // NULL para ações do sistema
+  action    String   // Ex: "CREATE_USER", "LOGIN", "DELETE_TENANT"
+  resource  String?  // Recurso afetado (ex: "user:123")
+  details   Json?    // Detalhes adicionais da ação
+  
+  createdAt DateTime @default(now())
+  
+  @@map("audit_logs")
+}
+
+// =====================================
+// ENUMS
+// =====================================
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum UserRole {
+  SUPER_ADMIN  // Acesso total ao sistema
+  ADMIN        // Admin de tenant específico
+  USER         // Usuário regular
+}
