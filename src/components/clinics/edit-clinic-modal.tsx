@@ -1,0 +1,253 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Loader2, Building2 } from "lucide-react"
+
+interface Plan {
+  id: string
+  name: string
+  maxUsers: number
+  price: number | null
+}
+
+interface Tenant {
+  id: string
+  name: string
+  slug: string
+  domain: string | null
+  status: "ACTIVE" | "SUSPENDED" | "INACTIVE"
+  maxUsers: number
+  plan: Plan
+}
+
+interface EditClinicModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  tenant: Tenant | null
+  onSuccess?: () => void
+}
+
+export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditClinicModalProps) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const [formData, setFormData] = useState({
+    name: "",
+    slug: "",
+    domain: "",
+    status: "ACTIVE" as const,
+    maxUsers: "",
+  })
+
+  useEffect(() => {
+    if (tenant && open) {
+      setFormData({
+        name: tenant.name,
+        slug: tenant.slug,
+        domain: tenant.domain || "",
+        status: tenant.status,
+        maxUsers: tenant.maxUsers.toString(),
+      })
+    }
+  }, [tenant, open])
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    
+    // Auto-generate slug from name if name changed
+    if (field === "name" && tenant?.slug === formData.slug) {
+      const slug = value
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .trim()
+      
+      setFormData(prev => ({ ...prev, slug }))
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!tenant) return
+    
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await fetch(`/api/clinics/${tenant.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          maxUsers: formData.maxUsers ? parseInt(formData.maxUsers) : undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Erro ao atualizar clínica")
+      }
+
+      onOpenChange(false)
+      onSuccess?.()
+      
+    } catch (error) {
+      console.error("Erro ao atualizar clínica:", error)
+      setError(error instanceof Error ? error.message : "Erro ao atualizar clínica")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    const statusMap = {
+      ACTIVE: "Ativo",
+      SUSPENDED: "Suspenso",
+      INACTIVE: "Inativo"
+    }
+    return statusMap[status as keyof typeof statusMap] || status
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Editar Clínica
+          </DialogTitle>
+          <DialogDescription>
+            Atualize as informações da clínica {tenant?.name}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome da Clínica *</Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Clínica São Paulo"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-slug">Identificador (Slug) *</Label>
+              <Input
+                id="edit-slug"
+                value={formData.slug}
+                onChange={(e) => handleInputChange("slug", e.target.value)}
+                placeholder="clinica-sao-paulo"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-domain">Domínio Personalizado</Label>
+            <Input
+              id="edit-domain"
+              value={formData.domain}
+              onChange={(e) => handleInputChange("domain", e.target.value)}
+              placeholder="clinica.exemplo.com"
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">Status *</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleInputChange("status", value)}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">Ativo</SelectItem>
+                  <SelectItem value="SUSPENDED">Suspenso</SelectItem>
+                  <SelectItem value="INACTIVE">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-maxUsers">Limite de Usuários</Label>
+              <Input
+                id="edit-maxUsers"
+                type="number"
+                value={formData.maxUsers}
+                onChange={(e) => handleInputChange("maxUsers", e.target.value)}
+                placeholder={tenant?.plan.maxUsers.toString()}
+                min="1"
+              />
+              <p className="text-xs text-muted-foreground">
+                Padrão do plano: {tenant?.plan.maxUsers} usuários
+              </p>
+            </div>
+          </div>
+
+          {/* Info do Plano (somente leitura) */}
+          <div className="rounded-lg bg-muted p-3">
+            <p className="text-sm font-medium">Plano Atual: {tenant?.plan.name}</p>
+            <p className="text-xs text-muted-foreground">
+              Para alterar o plano, entre em contato com o suporte
+            </p>
+          </div>
+
+          {error && (
+            <div className="rounded-md bg-destructive/10 p-3">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar Alterações"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

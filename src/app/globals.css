@@ -25,6 +25,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -44,38 +45,67 @@
 }
 
 :root {
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.623 0.214 259.815);
-  --primary-foreground: oklch(0.97 0.014 254.604);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.623 0.214 259.815);
-  --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  /* Caleidoscópio Design System Tokens - Baseado no Figma */
+  --radius: 8px; /* radius-md consistente */
+
+  /* Cores extraídas do Figma */
+  --caleidoscopio-primary: 210 47% 30%; /* azul escuro para textos/headers */
+  --caleidoscopio-action: 225 93% 54%; /* #1E56F0 - azul vibrante dos botões */
+  --caleidoscopio-text-primary: 0 0% 10%; /* #1A1A1A - texto principal */
+  --caleidoscopio-text-secondary: 0 0% 40%; /* #666666 - texto secundário */
+  --caleidoscopio-background: 0 0% 100%; /* #FFFFFF - fundo */
+  --caleidoscopio-border: 0 0% 92%; /* #EBEBEB - bordas sutis */
+  --caleidoscopio-input: 0 0% 96%; /* #F5F5F5 - fundo de inputs */
+  --caleidoscopio-feedback-error: 0 70% 50%;
+  --caleidoscopio-feedback-success: 120 60% 45%;
+  --caleidoscopio-feedback-warning: 38 90% 50%;
+  --caleidoscopio-white: 0 0% 100%;
+
+  /* Mapeamento para Shadcn - Tailwind CSS v4 format */
+  --background: hsl(0 0% 100%); /* branco puro */
+  --foreground: hsl(0 0% 10%); /* texto principal escuro */
+  --card: hsl(0 0% 100%); /* cards brancos */
+  --card-foreground: hsl(0 0% 10%); /* texto em cards */
+  --popover: hsl(0 0% 100%); /* popovers brancos */
+  --popover-foreground: hsl(0 0% 10%); /* texto em popovers */
+  --primary: hsl(225 93% 54%); /* azul vibrante do Figma #1E56F0 */
+  --primary-foreground: hsl(0 0% 100%); /* texto branco em primary */
+  --secondary: hsl(0 0% 96%); /* cinza muito claro */
+  --secondary-foreground: hsl(0 0% 10%); /* texto escuro em secondary */
+  --muted: hsl(0 0% 96%); /* elementos muted */
+  --muted-foreground: hsl(0 0% 40%); /* texto muted */
+  --accent: hsl(225 93% 54%); /* accent = primary */
+  --accent-foreground: hsl(0 0% 100%); /* texto branco em accent */
+  --destructive: hsl(0 70% 50%); /* vermelho para erros */
+  --destructive-foreground: hsl(0 0% 100%); /* texto branco em destructive */
+  --border: hsl(0 0% 92%); /* bordas sutis */
+  --input: hsl(0 0% 92%); /* bordas de input */
+  --ring: hsl(225 93% 54%); /* ring = primary para foco */
+
+  /* Tokens de espaçamento (8px grid do Figma) */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --space-8: 64px;
+
+  /* Charts mantendo cores harmoniosas */
+  --chart-1: 225 93% 54%; /* azul primary */
+  --chart-2: 160 60% 45%; /* verde complementar */
+  --chart-3: 30 80% 55%; /* laranja */
+  --chart-4: 280 65% 60%; /* roxo */
+  --chart-5: 340 75% 55%; /* rosa */
+
+  /* Sidebar usando cores do Figma */
+  --sidebar: 0 0% 100%; /* fundo branco */
+  --sidebar-foreground: 0 0% 10%; /* texto escuro */
+  --sidebar-primary: 225 93% 54%; /* azul primary */
+  --sidebar-primary-foreground: 0 0% 100%; /* texto branco */
+  --sidebar-accent: 0 0% 96%; /* cinza claro */
+  --sidebar-accent-foreground: 0 0% 10%; /* texto escuro */
+  --sidebar-border: 0 0% 92%; /* bordas sutis */
+  --sidebar-ring: 225 93% 54%; /* ring azul */
 }
 
 .dark {
@@ -117,6 +147,63 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Tipografia do Design System - baseada no Figma */
+  h1 {
+    @apply text-4xl font-bold leading-tight; /* Headers grandes e bold */
+  }
+
+  h2 {
+    @apply text-2xl font-bold leading-tight; /* Títulos de seção */
+  }
+
+  h3 {
+    @apply text-xl font-semibold leading-tight; /* Subtítulos */
+  }
+
+  /* Body text com melhor legibilidade */
+  p {
+    @apply text-base leading-relaxed; /* Texto de parágrafo */
+  }
+
+  /* Labels e Links */
+  .label {
+    @apply text-sm font-medium text-foreground; /* Labels de formulário */
+  }
+
+  .link {
+    @apply text-sm font-medium text-primary hover:text-primary/80 transition-colors;
+  }
+
+  /* Classes utilitárias para espaçamento do Figma */
+  .space-figma-xs {
+    margin: var(--space-1);
+  } /* 8px */
+  .space-figma-sm {
+    margin: var(--space-2);
+  } /* 16px */
+  .space-figma-md {
+    margin: var(--space-3);
+  } /* 24px */
+  .space-figma-lg {
+    margin: var(--space-4);
+  } /* 32px */
+  .space-figma-xl {
+    margin: var(--space-6);
+  } /* 48px */
+  .space-figma-2xl {
+    margin: var(--space-8);
+  } /* 64px */
+
+  /* Forçar cor do botão primary */
+  .btn-primary {
+    background-color: #1e56f0 !important;
+    color: white !important;
+  }
+
+  .btn-primary:hover {
+    background-color: #1847d1 !important;
   }
 }
