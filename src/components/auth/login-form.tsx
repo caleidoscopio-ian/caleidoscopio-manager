@@ -68,14 +68,14 @@ export function LoginForm({
     };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className={cn("flex flex-col gap-4 sm:gap-6", className)} {...props}>
       <Card className="overflow-hidden">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8" onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-6">
+          <form className="p-4 sm:p-6 md:p-8" onSubmit={handleSubmit}>
+            <div className="flex flex-col gap-4 sm:gap-6">
               <div className="flex flex-col items-center text-center">
-                <h1 className="text-2xl font-bold">Bem-vindo de volta</h1>
-                <p className="text-balance text-muted-foreground">
+                <h1 className="text-xl sm:text-2xl font-bold">Bem-vindo de volta</h1>
+                <p className="text-balance text-muted-foreground text-sm sm:text-base">
                   Entre em sua conta Caleidoscópio
                 </p>
               </div>
@@ -172,18 +172,18 @@ export function LoginForm({
 
           <div className="relative hidden bg-muted md:block">
             <div className="absolute inset-0 bg-primary flex items-center justify-center">
-              <div className="text-center text-white p-8">
-                <div className="mb-4 flex items-center justify-center">
-                  <div className="mr-2 h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
-                    <div className="h-4 w-4 rounded-full bg-white/40" />
+              <div className="text-center text-white p-6 lg:p-8">
+                <div className="mb-3 lg:mb-4 flex items-center justify-center">
+                  <div className="mr-2 h-6 w-6 lg:h-8 lg:w-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <div className="h-3 w-3 lg:h-4 lg:w-4 rounded-full bg-white/40" />
                   </div>
-                  <span className="text-xl font-bold">Caleidoscópio</span>
+                  <span className="text-lg lg:text-xl font-bold">Caleidoscópio</span>
                 </div>
-                <blockquote className="text-lg mb-2">
+                <blockquote className="text-base lg:text-lg mb-2">
                   &quot;Transformando o atendimento terapêutico com tecnologia
                   especializada para TEA.&quot;
                 </blockquote>
-                <cite className="text-sm opacity-80">Equipe Caleidoscópio</cite>
+                <cite className="text-xs lg:text-sm opacity-80">Equipe Caleidoscópio</cite>
               </div>
             </div>
           </div>

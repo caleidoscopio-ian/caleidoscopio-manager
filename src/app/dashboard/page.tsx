@@ -141,21 +141,21 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 space-y-6 p-8 pt-6">
+      <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-6 lg:p-8 pt-4 sm:pt-6">
         {/* Header */}
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Bem-vindo de volta, {user?.name}! Aqui está um resumo do seu sistema.
           </p>
         </div>
 
         {/* Stats Cards */}
         {statsLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <Card key={i}>
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                 </CardContent>
               </Card>
@@ -163,12 +163,12 @@ export default function DashboardPage() {
           </div>
         ) : error ? (
           <Card>
-            <CardContent className="p-6">
-              <p className="text-destructive">{error}</p>
+            <CardContent className="p-4 sm:p-6">
+              <p className="text-destructive text-sm sm:text-base">{error}</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {/* Estatísticas baseadas no role do usuário */}
             {isSuperAdmin && stats && (
               <>
@@ -249,36 +249,36 @@ export default function DashboardPage() {
         )}
 
         {/* Main Content Area */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-7 lg:gap-6">
           {/* Overview Chart */}
-          <Card className="col-span-4">
-            <CardHeader>
-              <CardTitle>Visão Geral</CardTitle>
+          <Card className="lg:col-span-4">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Visão Geral</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-center h-[250px] sm:h-[300px] text-muted-foreground">
                 <div className="text-center space-y-2">
-                  <TrendingUp className="h-8 w-8 mx-auto" />
-                  <p>Gráficos de estatísticas serão implementados aqui</p>
-                  <p className="text-sm">Mostrando dados de uso e crescimento</p>
+                  <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 mx-auto" />
+                  <p className="text-sm sm:text-base">Gráficos de estatísticas serão implementados aqui</p>
+                  <p className="text-xs sm:text-sm">Mostrando dados de uso e crescimento</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Recent Activity */}
-          <Card className="col-span-3">
-            <CardHeader>
-              <CardTitle>Atividade Recente</CardTitle>
+          <Card className="lg:col-span-3">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Atividade Recente</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-3 sm:space-y-4">
                 {recentActivity.length > 0 ? (
                   recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-center space-x-4">
-                      <div className={`w-2 h-2 rounded-full ${getActivityColor(activity.type)}`}></div>
-                      <div className="space-y-1 flex-1">
-                        <p className="text-sm font-medium">{activity.description}</p>
+                    <div key={activity.id} className="flex items-center space-x-3 sm:space-x-4">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getActivityColor(activity.type)}`}></div>
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium truncate">{activity.description}</p>
                         <p className="text-xs text-muted-foreground">
                           {formatTimeAgo(activity.createdAt)}
                         </p>
@@ -287,8 +287,8 @@ export default function DashboardPage() {
                   ))
                 ) : (
                   <div className="text-center text-muted-foreground py-4">
-                    <Activity className="h-8 w-8 mx-auto mb-2" />
-                    <p className="text-sm">Nenhuma atividade recente</p>
+                    <Activity className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2" />
+                    <p className="text-xs sm:text-sm">Nenhuma atividade recente</p>
                   </div>
                 )}
               </div>
@@ -299,32 +299,32 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         {(isSuperAdmin || isAdmin) && (
           <Card>
-            <CardHeader>
-              <CardTitle>Ações Rápidas</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Ações Rápidas</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
                 {isSuperAdmin && (
                   <>
                     <button 
                       onClick={() => router.push('/clinics')}
-                      className="flex flex-col items-center p-4 text-center space-y-2 rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors hover:bg-muted/50"
+                      className="flex flex-col items-center p-3 sm:p-4 text-center space-y-2 rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors hover:bg-muted/50"
                     >
-                      <Building2 className="h-8 w-8 text-muted-foreground" />
+                      <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Nova Clínica</p>
-                        <p className="text-xs text-muted-foreground">Cadastrar nova clínica</p>
+                        <p className="text-xs sm:text-sm font-medium">Nova Clínica</p>
+                        <p className="text-xs text-muted-foreground hidden sm:block">Cadastrar nova clínica</p>
                       </div>
                     </button>
                     
                     <button 
                       onClick={() => router.push('/plans')}
-                      className="flex flex-col items-center p-4 text-center space-y-2 rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors hover:bg-muted/50"
+                      className="flex flex-col items-center p-3 sm:p-4 text-center space-y-2 rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors hover:bg-muted/50"
                     >
-                      <DollarSign className="h-8 w-8 text-muted-foreground" />
+                      <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Gerenciar Planos</p>
-                        <p className="text-xs text-muted-foreground">Configurar assinaturas</p>
+                        <p className="text-xs sm:text-sm font-medium">Gerenciar Planos</p>
+                        <p className="text-xs text-muted-foreground hidden sm:block">Configurar assinaturas</p>
                       </div>
                     </button>
                   </>
@@ -332,23 +332,23 @@ export default function DashboardPage() {
                 
                 <button 
                   onClick={() => router.push('/users')}
-                  className="flex flex-col items-center p-4 text-center space-y-2 rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors hover:bg-muted/50"
+                  className="flex flex-col items-center p-3 sm:p-4 text-center space-y-2 rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors hover:bg-muted/50"
                 >
-                  <Users className="h-8 w-8 text-muted-foreground" />
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium">Gerenciar Usuários</p>
-                    <p className="text-xs text-muted-foreground">Adicionar ou editar usuários</p>
+                    <p className="text-xs sm:text-sm font-medium">Gerenciar Usuários</p>
+                    <p className="text-xs text-muted-foreground hidden sm:block">Adicionar ou editar usuários</p>
                   </div>
                 </button>
                 
                 <button 
                   onClick={() => router.push('/reports')}
-                  className="flex flex-col items-center p-4 text-center space-y-2 rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors hover:bg-muted/50"
+                  className="flex flex-col items-center p-3 sm:p-4 text-center space-y-2 rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors hover:bg-muted/50"
                 >
-                  <TrendingUp className="h-8 w-8 text-muted-foreground" />
+                  <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium">Ver Relatórios</p>
-                    <p className="text-xs text-muted-foreground">Acessar estatísticas</p>
+                    <p className="text-xs sm:text-sm font-medium">Ver Relatórios</p>
+                    <p className="text-xs text-muted-foreground hidden sm:block">Acessar estatísticas</p>
                   </div>
                 </button>
               </div>

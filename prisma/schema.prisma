@@ -20,6 +20,16 @@ model Tenant {
   domain    String?  // Domínio personalizado opcional
   status    TenantStatus @default(ACTIVE)
   
+  // Dados empresariais
+  cnpj         String? // CNPJ da empresa
+  razaoSocial  String? // Razão social da empresa
+  
+  // Endereço completo
+  cep          String? // CEP
+  endereco     String? // Endereço completo (rua, número, complemento)
+  cidade       String? // Cidade
+  estado       String? // Estado (UF)
+  
   // Plano e licenciamento
   planId    String
   plan      Plan     @relation(fields: [planId], references: [id])

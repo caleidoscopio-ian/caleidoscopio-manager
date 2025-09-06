@@ -36,6 +36,13 @@ export interface Tenant {
   maxUsers: number
   createdAt: string
   updatedAt: string
+  // Novos campos
+  cnpj?: string | null
+  razaoSocial?: string | null
+  cep?: string | null
+  endereco?: string | null
+  cidade?: string | null
+  estado?: string | null
   plan: Plan
   stats: {
     totalUsers: number

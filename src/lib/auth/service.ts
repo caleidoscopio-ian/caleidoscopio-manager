@@ -71,7 +71,10 @@ export async function authenticateUser(
 export async function createTenant(
   data: CreateTenantData
 ): Promise<{ tenant: any; admin: any }> {
-  const { name, slug, planId, adminEmail, adminName, adminPassword } = data;
+  const { 
+    name, slug, planId, adminEmail, adminName, adminPassword,
+    domain, maxUsers, cnpj, razaoSocial, cep, endereco, cidade, estado 
+  } = data;
 
   // Verificar se slug já existe
   const existingTenant = await prisma.tenant.findUnique({
@@ -102,6 +105,14 @@ export async function createTenant(
         name,
         slug,
         planId,
+        ...(domain && { domain }),
+        ...(maxUsers && { maxUsers }),
+        ...(cnpj && { cnpj }),
+        ...(razaoSocial && { razaoSocial }),
+        ...(cep && { cep }),
+        ...(endereco && { endereco }),
+        ...(cidade && { cidade }),
+        ...(estado && { estado }),
       },
       include: {
         plan: true,

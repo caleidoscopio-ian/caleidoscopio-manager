@@ -33,4 +33,14 @@ export interface CreateTenantData {
   adminEmail: string
   adminName: string
   adminPassword: string
+  // Campos opcionais
+  domain?: string
+  maxUsers?: number
+  // Novos campos empresariais
+  cnpj?: string
+  razaoSocial?: string
+  cep?: string
+  endereco?: string
+  cidade?: string
+  estado?: string
 }

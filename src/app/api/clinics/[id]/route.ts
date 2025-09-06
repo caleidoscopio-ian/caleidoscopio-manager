@@ -67,7 +67,11 @@ export async function PUT(
   try {
     const resolvedParams = await params
     const body = await request.json()
-    const { name, slug, domain, status, maxUsers } = body
+    const { 
+      name, slug, domain, status, maxUsers,
+      // Novos campos
+      cnpj, razaoSocial, cep, endereco, cidade, estado 
+    } = body
 
     // Verificar se tenant existe
     const existingTenant = await prisma.tenant.findUnique({
@@ -103,6 +107,13 @@ export async function PUT(
         ...(domain !== undefined && { domain }),
         ...(status && { status }),
         ...(maxUsers && { maxUsers }),
+        // Novos campos
+        ...(cnpj !== undefined && { cnpj }),
+        ...(razaoSocial !== undefined && { razaoSocial }),
+        ...(cep !== undefined && { cep }),
+        ...(endereco !== undefined && { endereco }),
+        ...(cidade !== undefined && { cidade }),
+        ...(estado !== undefined && { estado }),
       },
       include: {
         plan: true,

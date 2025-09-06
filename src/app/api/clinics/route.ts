@@ -79,7 +79,12 @@ export async function POST(request: NextRequest) {
     }
     
     const body = await request.json()
-    const { name, slug, domain, planId, maxUsers, adminEmail, adminName, adminPassword } = body
+    const { 
+      name, slug, domain, planId, maxUsers, 
+      adminEmail, adminName, adminPassword,
+      // Novos campos
+      cnpj, razaoSocial, cep, endereco, cidade, estado 
+    } = body
 
     // Validações
     if (!name || !slug || !planId || !adminEmail || !adminName || !adminPassword) {
@@ -136,7 +141,14 @@ export async function POST(request: NextRequest) {
       adminName,
       adminPassword,
       ...(domain && { domain }),
-      ...(maxUsers && { maxUsers })
+      ...(maxUsers && { maxUsers }),
+      // Novos campos opcionais
+      ...(cnpj && { cnpj }),
+      ...(razaoSocial && { razaoSocial }),
+      ...(cep && { cep }),
+      ...(endereco && { endereco }),
+      ...(cidade && { cidade }),
+      ...(estado && { estado })
     })
 
     return NextResponse.json({

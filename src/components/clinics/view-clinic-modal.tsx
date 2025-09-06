@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Users, Calendar, DollarSign, Globe, Activity } from "lucide-react"
+import { Building2, Users, Calendar, DollarSign, Globe, Activity, FileText, MapPin } from "lucide-react"
 
 interface Plan {
   id: string
@@ -26,6 +26,13 @@ interface Tenant {
   maxUsers: number
   createdAt: string
   updatedAt: string
+  // Novos campos
+  cnpj?: string | null
+  razaoSocial?: string | null
+  cep?: string | null
+  endereco?: string | null
+  cidade?: string | null
+  estado?: string | null
   plan: Plan
   stats: {
     totalUsers: number
@@ -141,6 +148,68 @@ export function ViewClinicModal({ open, onOpenChange, tenant }: ViewClinicModalP
               )}
             </div>
           </div>
+
+          {/* Dados Empresariais */}
+          {(tenant.cnpj || tenant.razaoSocial) && (
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Dados Empresariais
+              </h3>
+              <div className="grid gap-3 md:grid-cols-2">
+                {tenant.cnpj && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">CNPJ</p>
+                    <p className="font-medium font-mono">{tenant.cnpj}</p>
+                  </div>
+                )}
+                {tenant.razaoSocial && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Razão Social</p>
+                    <p className="font-medium">{tenant.razaoSocial}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Endereço */}
+          {(tenant.cep || tenant.endereco || tenant.cidade || tenant.estado) && (
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Endereço
+              </h3>
+              <div className="space-y-3">
+                {tenant.endereco && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Endereço Completo</p>
+                    <p className="font-medium">{tenant.endereco}</p>
+                  </div>
+                )}
+                <div className="grid gap-3 md:grid-cols-3">
+                  {tenant.cep && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">CEP</p>
+                      <p className="font-medium font-mono">{tenant.cep}</p>
+                    </div>
+                  )}
+                  {tenant.cidade && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Cidade</p>
+                      <p className="font-medium">{tenant.cidade}</p>
+                    </div>
+                  )}
+                  {tenant.estado && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Estado</p>
+                      <p className="font-medium">{tenant.estado}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Plan Info */}
           <div className="rounded-lg border bg-muted/50 p-4">

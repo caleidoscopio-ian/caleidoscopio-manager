@@ -102,7 +102,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <div
       className={cn(
-        "relative flex flex-col border-r bg-background transition-all duration-300",
+        "relative hidden md:flex flex-col border-r bg-background transition-all duration-300",
         collapsed ? "w-16" : "w-64",
         className
       )}

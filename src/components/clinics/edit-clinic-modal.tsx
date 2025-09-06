@@ -55,6 +55,13 @@ export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditC
     domain: "",
     status: "ACTIVE" as const,
     maxUsers: "",
+    // Novos campos
+    cnpj: "",
+    razaoSocial: "",
+    cep: "",
+    endereco: "",
+    cidade: "",
+    estado: "",
   })
 
   useEffect(() => {
@@ -65,6 +72,13 @@ export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditC
         domain: tenant.domain || "",
         status: tenant.status,
         maxUsers: tenant.maxUsers.toString(),
+        // Novos campos (com valores padrão se não existirem)
+        cnpj: tenant.cnpj || "",
+        razaoSocial: tenant.razaoSocial || "",
+        cep: tenant.cep || "",
+        endereco: tenant.endereco || "",
+        cidade: tenant.cidade || "",
+        estado: tenant.estado || "",
       })
     }
   }, [tenant, open])
@@ -131,7 +145,7 @@ export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
@@ -209,6 +223,92 @@ export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditC
               <p className="text-xs text-muted-foreground">
                 Padrão do plano: {tenant?.plan.maxUsers} usuários
               </p>
+            </div>
+          </div>
+
+          {/* Dados Empresariais */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Dados Empresariais</h3>
+              <p className="text-sm text-muted-foreground">
+                Informações da empresa para contratos e documentação
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input
+                  id="cnpj"
+                  value={formData.cnpj}
+                  onChange={(e) => handleInputChange("cnpj", e.target.value)}
+                  placeholder="00.000.000/0000-00"
+                  maxLength={18}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="razaoSocial">Razão Social</Label>
+                <Input
+                  id="razaoSocial"
+                  value={formData.razaoSocial}
+                  onChange={(e) => handleInputChange("razaoSocial", e.target.value)}
+                  placeholder="Nome da empresa"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Endereço */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Endereço</h3>
+              <p className="text-sm text-muted-foreground">
+                Localização da clínica
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="cep">CEP</Label>
+                <Input
+                  id="cep"
+                  value={formData.cep}
+                  onChange={(e) => handleInputChange("cep", e.target.value)}
+                  placeholder="00000-000"
+                  maxLength={9}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input
+                  id="cidade"
+                  value={formData.cidade}
+                  onChange={(e) => handleInputChange("cidade", e.target.value)}
+                  placeholder="Cidade"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="endereco">Endereço Completo</Label>
+                <Input
+                  id="endereco"
+                  value={formData.endereco}
+                  onChange={(e) => handleInputChange("endereco", e.target.value)}
+                  placeholder="Rua, número, complemento"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="estado">Estado</Label>
+                <Input
+                  id="estado"
+                  value={formData.estado}
+                  onChange={(e) => handleInputChange("estado", e.target.value)}
+                  placeholder="SP"
+                  maxLength={2}
+                />
+              </div>
             </div>
           </div>
 
