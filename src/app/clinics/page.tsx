@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { Loader2, Building2, Users, Plus } from "lucide-react"
+import { Loader2, Building2, Users, Plus, Crown } from "lucide-react"
 import { CreateClinicModal } from "@/components/clinics/create-clinic-modal"
 import { EditClinicModal } from "@/components/clinics/edit-clinic-modal"
 import { DeleteClinicModal } from "@/components/clinics/delete-clinic-modal"
@@ -20,7 +20,7 @@ interface ClinicsResponse {
 }
 
 export default function ClinicsPage() {
-  const { isAuthenticated, isSuperAdmin, loading: authLoading } = useAuth()
+  const { isAuthenticated, isSuperAdmin, isAdmin, loading: authLoading } = useAuth()
   const router = useRouter()
   
   const [tenants, setTenants] = useState<Tenant[]>([])
@@ -33,15 +33,15 @@ export default function ClinicsPage() {
   const [showViewModal, setShowViewModal] = useState(false)
 
   useEffect(() => {
-    if (!authLoading && !isSuperAdmin) {
+    if (!authLoading && (!isAuthenticated || (!isSuperAdmin && !isAdmin))) {
       router.push("/dashboard")
       return
     }
 
-    if (isAuthenticated && isSuperAdmin) {
+    if (isAuthenticated && (isSuperAdmin || isAdmin)) {
       fetchTenants()
     }
-  }, [authLoading, isAuthenticated, isSuperAdmin, router])
+  }, [authLoading, isAuthenticated, isSuperAdmin, isAdmin, router])
 
   const fetchTenants = async () => {
     try {
@@ -89,9 +89,10 @@ export default function ClinicsPage() {
     onView: handleViewTenant,
     onEdit: handleEditTenant,
     onDelete: handleDeleteTenant,
+    isSuperAdmin, // Passar informação sobre permissões
   })
 
-  if (authLoading || !isAuthenticated || !isSuperAdmin) {
+  if (authLoading || !isAuthenticated || (!isSuperAdmin && !isAdmin)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -105,94 +106,162 @@ export default function ClinicsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight">Clínicas</h2>
+            <h2 className="text-3xl font-bold tracking-tight">
+              {isSuperAdmin ? "Clínicas" : "Minha Clínica"}
+            </h2>
             <p className="text-muted-foreground">
-              Gerencie todas as clínicas do sistema
+              {isSuperAdmin 
+                ? "Gerencie todas as clínicas do sistema" 
+                : "Visualize informações da sua clínica"
+              }
             </p>
           </div>
-          <Button className="gap-2" onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4" />
-            Nova Clínica
-          </Button>
+          {isSuperAdmin && (
+            <Button className="gap-2" onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4" />
+              Nova Clínica
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total de Clínicas
-              </CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{tenants.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Todas as clínicas
-              </p>
-            </CardContent>
-          </Card>
+        {isSuperAdmin ? (
+          // Stats para Super Admin - visão geral do sistema
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total de Clínicas
+                </CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{tenants.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Todas as clínicas
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Clínicas Ativas
-              </CardTitle>
-              <Building2 className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {tenants.filter(t => t.status === "ACTIVE").length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Em operação
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Clínicas Ativas
+                </CardTitle>
+                <Building2 className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {tenants.filter(t => t.status === "ACTIVE").length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Em operação
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total de Usuários
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {tenants.reduce((acc, tenant) => acc + tenant.stats.totalUsers, 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Todos os usuários
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total de Usuários
+                </CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {tenants.reduce((acc, tenant) => acc + tenant.stats.totalUsers, 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Todos os usuários
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Receita Estimada
-              </CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatPrice(
-                  tenants
-                    .filter(t => t.status === "ACTIVE")
-                    .reduce((acc, tenant) => acc + (Number(tenant.plan.price) || 0), 0)
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Receita mensal
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Receita Mensal
+                </CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatPrice(
+                    tenants
+                      .filter(t => t.status === "ACTIVE")
+                      .reduce((acc, tenant) => acc + (Number(tenant.plan.price) || 0), 0)
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Receita mensal
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          // Stats para Admin - visão da própria clínica
+          tenants.length > 0 && (
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Status da Clínica
+                  </CardTitle>
+                  <Building2 className={`h-4 w-4 ${tenants[0].status === 'ACTIVE' ? 'text-green-600' : 'text-yellow-600'}`} />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${tenants[0].status === 'ACTIVE' ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {tenants[0].status === 'ACTIVE' ? 'Ativa' : tenants[0].status}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {tenants[0].name}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Usuários Ativos
+                  </CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {tenants[0].stats.activeUsers}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    de {tenants[0].plan?.maxUsers || '∞'} possíveis
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Plano Atual
+                  </CardTitle>
+                  <Crown className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {tenants[0].plan?.name || 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    R$ {tenants[0].plan?.price || '0'}/mês
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )
+        )}
 
         {/* Clinics Data Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Clínicas</CardTitle>
+            <CardTitle>
+              {isSuperAdmin ? "Lista de Clínicas" : "Informações da Clínica"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
@@ -220,30 +289,33 @@ export default function ClinicsPage() {
         </Card>
 
         {/* Modals */}
-        <CreateClinicModal
-          open={showCreateModal}
-          onOpenChange={setShowCreateModal}
-          onSuccess={fetchTenants}
-        />
-
+        {isSuperAdmin && (
+          <>
+            <CreateClinicModal
+              open={showCreateModal}
+              onOpenChange={setShowCreateModal}
+              onSuccess={fetchTenants}
+            />
+            <EditClinicModal
+              open={showEditModal}
+              onOpenChange={setShowEditModal}
+              tenant={selectedTenant}
+              onSuccess={fetchTenants}
+            />
+            <DeleteClinicModal
+              open={showDeleteModal}
+              onOpenChange={setShowDeleteModal}
+              tenant={selectedTenant}
+              onSuccess={fetchTenants}
+            />
+          </>
+        )}
+        
+        {/* Modal de visualização - disponível para todos */}
         <ViewClinicModal
           open={showViewModal}
           onOpenChange={setShowViewModal}
           tenant={selectedTenant}
-        />
-
-        <EditClinicModal
-          open={showEditModal}
-          onOpenChange={setShowEditModal}
-          tenant={selectedTenant}
-          onSuccess={fetchTenants}
-        />
-
-        <DeleteClinicModal
-          open={showDeleteModal}
-          onOpenChange={setShowDeleteModal}
-          tenant={selectedTenant}
-          onSuccess={fetchTenants}
         />
       </div>
     </DashboardLayout>

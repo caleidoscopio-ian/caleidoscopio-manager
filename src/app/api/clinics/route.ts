@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyAuth } from '@/lib/auth/server'
 
 export async function GET(request: NextRequest) {
   try {
+    // Verificar autenticação e se é admin ou super admin
+    const auth = await verifyAuth(request)
+    if (!auth || !['SUPER_ADMIN', 'ADMIN'].includes(auth.user.role)) {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
+    // Admin só vê sua própria clínica, Super Admin vê todas
+    const whereClause = auth.user.role === 'ADMIN' ? { id: auth.user.tenantId } : {}
+    
     const tenants = await prisma.tenant.findMany({
+      where: whereClause,
       include: {
         plan: {
           select: {
@@ -62,6 +72,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar autenticação e se é super admin (só ele pode criar clínicas)
+    const auth = await verifyAuth(request)
+    if (!auth || auth.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
+    
     const body = await request.json()
     const { name, slug, domain, planId, maxUsers, adminEmail, adminName, adminPassword } = body
 

@@ -50,9 +50,10 @@ interface ColumnsProps {
   onView: (tenant: Tenant) => void
   onEdit: (tenant: Tenant) => void
   onDelete: (tenant: Tenant) => void
+  isSuperAdmin: boolean
 }
 
-export const createColumns = ({ onView, onEdit, onDelete }: ColumnsProps): ColumnDef<Tenant>[] => [
+export const createColumns = ({ onView, onEdit, onDelete, isSuperAdmin }: ColumnsProps): ColumnDef<Tenant>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -234,17 +235,21 @@ export const createColumns = ({ onView, onEdit, onDelete }: ColumnsProps): Colum
               <Eye className="mr-2 h-4 w-4" />
               Ver Detalhes
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(tenant)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="text-destructive"
-              onClick={() => onDelete(tenant)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Excluir
-            </DropdownMenuItem>
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuItem onClick={() => onEdit(tenant)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={() => onDelete(tenant)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )
