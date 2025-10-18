@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,9 +18,14 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+
+  // Parâmetros SSO
+  const redirectProduct = searchParams.get('redirect'); // ex: 'educational'
+  const returnUrl = searchParams.get('returnUrl'); // URL de retorno
 
   const [formData, setFormData] = useState({
     email: "",
@@ -45,7 +50,45 @@ export function LoginForm({
       if (response.ok) {
         const data = await response.json();
 
-        // Redirecionar baseado no role
+        // Se é um login SSO (vindo de sistema externo)
+        if (redirectProduct && returnUrl) {
+          try {
+            // Verificar acesso ao produto
+            const accessResponse = await fetch("/api/auth/validate-access", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                productSlug: redirectProduct,
+                userEmail: formData.email
+              })
+            });
+
+            const accessData = await accessResponse.json();
+
+            if (!accessData.hasAccess) {
+              setError(accessData.error || "Você não tem acesso a este produto");
+              return;
+            }
+
+            // Gerar token SSO
+            const ssoResponse = await fetch(`/api/products/sso/${redirectProduct}`, {
+              method: "POST"
+            });
+
+            if (ssoResponse.ok) {
+              const ssoData = await ssoResponse.json();
+              const redirectUrlWithToken = `${returnUrl}?token=${ssoData.token}`;
+              window.location.href = redirectUrlWithToken;
+              return;
+            }
+          } catch (ssoError) {
+            console.error("Erro no SSO:", ssoError);
+            setError("Erro ao gerar acesso ao produto");
+            return;
+          }
+        }
+
+        // Login normal (sem SSO)
         if (data.user.role === "SUPER_ADMIN") {
           router.push("/admin");
         } else {

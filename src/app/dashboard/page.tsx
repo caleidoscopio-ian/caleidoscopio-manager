@@ -3,7 +3,8 @@
 import { useAuth } from "@/lib/auth/hooks"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { Loader2, TrendingUp, Users, Building2, Calendar, DollarSign, Activity } from "lucide-react"
+import { Loader2, TrendingUp, Users, Building2, Calendar, DollarSign, Activity, Package } from "lucide-react"
+import { ProductAccessCard } from "@/components/products/product-access-card"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -38,6 +39,20 @@ interface SystemStatus {
   uptime: string
 }
 
+interface TenantProduct {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  icon?: string
+  color?: string
+  baseUrl?: string
+  isActive: boolean
+  hasAccess: boolean
+  planConfig?: any
+  tenantConfig?: any
+}
+
 export default function DashboardPage() {
   const { user, loading, isAuthenticated, isSuperAdmin, isAdmin } = useAuth()
   const router = useRouter()
@@ -46,12 +61,17 @@ export default function DashboardPage() {
   const [systemStatus, setSystemStatus] = useState<SystemStatus>({ status: 'online', uptime: '99.9%' })
   const [statsLoading, setStatsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [tenantProducts, setTenantProducts] = useState<TenantProduct[]>([])
+  const [productsLoading, setProductsLoading] = useState(true)
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchDashboardStats()
+      if (user?.tenantId) {
+        fetchTenantProducts()
+      }
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, user])
 
   const fetchDashboardStats = async () => {
     try {
@@ -100,6 +120,46 @@ export default function DashboardPage() {
       case 'warning': return 'bg-yellow-500'
       case 'error': return 'bg-red-500'
       default: return 'bg-blue-500'
+    }
+  }
+
+  const fetchTenantProducts = async () => {
+    if (!user?.tenantId) return
+    
+    try {
+      setProductsLoading(true)
+      const response = await fetch(`/api/tenants/${user.tenantId}/products`)
+      
+      if (!response.ok) {
+        throw new Error('Erro ao carregar produtos')
+      }
+
+      const data = await response.json()
+      setTenantProducts(data.products || [])
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error)
+    } finally {
+      setProductsLoading(false)
+    }
+  }
+
+  const handleAccessProduct = async (productSlug: string) => {
+    try {
+      const response = await fetch(`/api/products/sso/${productSlug}`, {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar acesso')
+      }
+
+      const data = await response.json()
+      
+      if (data.redirectUrl) {
+        window.open(data.redirectUrl, '_blank')
+      }
+    } catch (error) {
+      console.error('Erro ao acessar produto:', error)
     }
   }
 
@@ -295,6 +355,40 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Produtos Disponíveis */}
+        {user?.tenantId && tenantProducts.length > 0 && (
+          <Card>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Produtos do Ecossistema
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Acesse os produtos disponíveis no seu plano
+              </p>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              {productsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {tenantProducts.map((product) => (
+                    <ProductAccessCard
+                      key={product.id}
+                      product={product}
+                      hasAccess={product.hasAccess}
+                      config={product.tenantConfig}
+                      onAccess={handleAccessProduct}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Actions */}
         {(isSuperAdmin || isAdmin) && (

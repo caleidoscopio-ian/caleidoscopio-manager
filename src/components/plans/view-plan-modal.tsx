@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { CreditCard, Users, Calendar, Check, Building2, DollarSign } from "lucide-react"
+import { CreditCard, Users, Calendar, Check, Building2, DollarSign, Package } from "lucide-react"
 import { Plan } from "./columns"
 
 interface ViewPlanModalProps {
@@ -20,18 +20,6 @@ interface ViewPlanModalProps {
   plan: Plan | null
 }
 
-const FEATURE_LABELS = {
-  gestao_pacientes: 'Gestão de Pacientes',
-  agenda_basica: 'Agenda Básica',
-  agenda_avancada: 'Agenda Avançada',
-  prontuario: 'Prontuário Eletrônico',
-  relatorios: 'Relatórios e Análises',
-  integracao_caleidoscopio: 'Integração Caleidoscópio',
-  api_acesso: 'Acesso à API',
-  suporte_prioritario: 'Suporte Prioritário',
-  backup_automatico: 'Backup Automático',
-  dominio_personalizado: 'Domínio Personalizado'
-}
 
 export function ViewPlanModal({ open, onOpenChange, plan }: ViewPlanModalProps) {
   if (!plan) return null
@@ -140,26 +128,51 @@ export function ViewPlanModal({ open, onOpenChange, plan }: ViewPlanModalProps) 
             </>
           )}
 
-          {/* Funcionalidades */}
+          {/* Produtos do Ecossistema */}
           <div>
             <h3 className="text-sm font-medium mb-3">
-              Funcionalidades ({plan.features.length})
+              Produtos do Ecossistema ({plan.planProducts?.filter(pp => pp.isActive).length || 0})
             </h3>
             
-            {plan.features.length > 0 ? (
-              <div className="grid gap-2 md:grid-cols-2">
-                {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">
-                      {FEATURE_LABELS[feature as keyof typeof FEATURE_LABELS] || feature}
-                    </span>
-                  </div>
-                ))}
+            {plan.planProducts && plan.planProducts.filter(pp => pp.isActive).length > 0 ? (
+              <div className="grid gap-3 md:grid-cols-1">
+                {plan.planProducts
+                  .filter(pp => pp.isActive)
+                  .map((planProduct) => (
+                    <div
+                      key={planProduct.id}
+                      className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50"
+                    >
+                      <div
+                        className="p-2 rounded-lg"
+                        style={{
+                          backgroundColor: planProduct.product.color
+                            ? `${planProduct.product.color}20`
+                            : "#f1f5f9",
+                          color: planProduct.product.color || "#64748b",
+                        }}
+                      >
+                        <Package className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium">
+                            {planProduct.product.name}
+                          </span>
+                        </div>
+                        {planProduct.product.description && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {planProduct.product.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                Nenhuma funcionalidade específica definida
+                Nenhum produto do ecossistema associado a este plano
               </p>
             )}
           </div>

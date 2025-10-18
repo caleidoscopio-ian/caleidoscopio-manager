@@ -57,54 +57,88 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, slug, description, maxUsers, features, price, isActive } = body
+    const { name, slug, description, maxUsers, products, price, isActive } = body
 
-    // Verificar se o plano existe
-    const existingPlan = await prisma.plan.findUnique({
-      where: { id: params.id }
+    // Validações básicas
+    if (!name || !slug || !maxUsers) {
+      return NextResponse.json({ 
+        error: 'Nome, slug e limite de usuários são obrigatórios' 
+      }, { status: 400 })
+    }
+
+    // Verificar se slug já existe (exceto para o plano atual)
+    const existingPlan = await prisma.plan.findFirst({
+      where: { 
+        slug,
+        id: { not: params.id }
+      }
     })
 
-    if (!existingPlan) {
-      return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
+    if (existingPlan) {
+      return NextResponse.json({ 
+        error: 'Já existe um plano com este slug' 
+      }, { status: 400 })
     }
 
-    // Se slug foi alterado, verificar se não existe outro plano com este slug
-    if (slug && slug !== existingPlan.slug) {
-      const planWithSlug = await prisma.plan.findUnique({
-        where: { slug }
+    // Usar transação para atualizar plano e relacionamentos com produtos
+    const result = await prisma.$transaction(async (tx) => {
+      // Atualizar plano
+      const plan = await tx.plan.update({
+        where: { id: params.id },
+        data: {
+          name,
+          slug,
+          description,
+          maxUsers: parseInt(maxUsers),
+          features: [], // Manter array vazio para compatibilidade
+          price: price ? parseFloat(price) : null,
+          isActive: isActive !== false
+        }
       })
 
-      if (planWithSlug) {
-        return NextResponse.json({ 
-          error: 'Já existe um plano com este slug' 
-        }, { status: 400 })
-      }
-    }
+      // Remover todas as associações de produtos existentes
+      await tx.planProduct.deleteMany({
+        where: { planId: plan.id }
+      })
 
-    const plan = await prisma.plan.update({
-      where: { id: params.id },
-      data: {
-        ...(name && { name }),
-        ...(slug && { slug }),
-        ...(description !== undefined && { description }),
-        ...(maxUsers && { maxUsers: parseInt(maxUsers) }),
-        ...(features && { features }),
-        ...(price !== undefined && { price: price ? parseFloat(price) : null }),
-        ...(isActive !== undefined && { isActive }),
-      },
-      include: {
-        _count: {
-          select: {
-            tenants: true,
+      // Criar novas associações com produtos se fornecidos
+      if (products && Array.isArray(products) && products.length > 0) {
+        const planProductsData = products.map((productId: string) => ({
+          planId: plan.id,
+          productId,
+          isActive: true,
+          config: {} // Configuração padrão vazia
+        }))
+
+        await tx.planProduct.createMany({
+          data: planProductsData
+        })
+      }
+
+      // Buscar plano completo com relacionamentos
+      const planWithRelations = await tx.plan.findUnique({
+        where: { id: plan.id },
+        include: {
+          planProducts: {
+            include: {
+              product: true
+            }
+          },
+          _count: {
+            select: {
+              tenants: true,
+            }
           }
         }
-      }
+      })
+
+      return planWithRelations
     })
 
     const planWithStats = {
-      ...plan,
+      ...result,
       stats: {
-        totalTenants: plan._count.tenants
+        totalTenants: result?._count?.tenants || 0
       }
     }
 
@@ -149,8 +183,17 @@ export async function DELETE(
       }, { status: 400 })
     }
 
-    await prisma.plan.delete({
-      where: { id: params.id }
+    // Usar transação para excluir plano e relacionamentos
+    await prisma.$transaction(async (tx) => {
+      // Excluir relacionamentos com produtos
+      await tx.planProduct.deleteMany({
+        where: { planId: params.id }
+      })
+
+      // Excluir plano
+      await tx.plan.delete({
+        where: { id: params.id }
+      })
     })
 
     return NextResponse.json({ message: 'Plano excluído com sucesso' })

@@ -40,7 +40,8 @@ model Tenant {
   updatedAt DateTime @updatedAt
   
   // Relacionamentos
-  users     User[]
+  users           User[]
+  tenantProducts  TenantProduct[]
   
   @@map("tenants")
 }
@@ -60,7 +61,8 @@ model Plan {
   updatedAt   DateTime @updatedAt
   
   // Relacionamentos
-  tenants     Tenant[]
+  tenants      Tenant[]
+  planProducts PlanProduct[]
   
   @@map("plans")
 }
@@ -88,7 +90,8 @@ model User {
   updatedAt DateTime @updatedAt
   
   // Relacionamentos
-  sessions  Session[]
+  sessions      Session[]
+  productTokens ProductToken[]
   
   @@map("users")
 }
@@ -118,6 +121,101 @@ model AuditLog {
   createdAt DateTime @default(now())
   
   @@map("audit_logs")
+}
+
+// =====================================
+// SISTEMA DE PRODUTOS DO ECOSSISTEMA
+// =====================================
+
+// Produtos disponíveis no ecossistema
+model Product {
+  id          String   @id @default(cuid())
+  name        String   // Ex: "E-commerce", "Educacional", "Telemedicina"
+  slug        String   @unique // Ex: "ecommerce", "education", "telemedicine"
+  description String?  // Descrição do produto
+  icon        String?  // Nome do ícone (lucide-react)
+  color       String?  // Cor tema do produto (#hex)
+  baseUrl     String?  // URL base do produto (para SSO)
+  isActive    Boolean  @default(true)
+  
+  // Configurações padrão do produto
+  defaultConfig Json?   // Configurações padrão quando ativado
+  
+  // Metadados
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relacionamentos
+  planProducts   PlanProduct[]
+  tenantProducts TenantProduct[]
+  productTokens  ProductToken[]
+  
+  @@map("products")
+}
+
+// Relacionamento entre planos e produtos (quais produtos cada plano inclui)
+model PlanProduct {
+  id        String  @id @default(cuid())
+  planId    String
+  productId String
+  plan      Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Configurações específicas do produto para este plano
+  config    Json?   // Ex: limites, features específicas, restrições
+  isActive  Boolean @default(true)
+  
+  // Metadados
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([planId, productId])
+  @@map("plan_products")
+}
+
+// Produtos ativos para cada tenant/clínica
+model TenantProduct {
+  id         String   @id @default(cuid())
+  tenantId   String
+  productId  String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Status e configurações
+  isActive    Boolean  @default(true)
+  config      Json?    // Configurações específicas para este tenant
+  activatedAt DateTime @default(now())
+  
+  // Dados de uso (para analytics)
+  lastAccessed DateTime?
+  accessCount  Int      @default(0)
+  
+  // Metadados
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tenantId, productId])
+  @@map("tenant_products")
+}
+
+// Tokens de acesso para produtos (SSO)
+model ProductToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Controle de acesso
+  expiresAt  DateTime
+  isRevoked  Boolean  @default(false)
+  
+  // Metadados
+  createdAt  DateTime @default(now())
+  lastUsed   DateTime?
+  
+  @@map("product_tokens")
 }
 
 // =====================================

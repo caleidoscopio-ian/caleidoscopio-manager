@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Loader2, CreditCard, Save } from "lucide-react"
+import { Loader2, CreditCard, Save, Package } from "lucide-react"
 import { Plan } from "./columns"
 
 interface EditPlanModalProps {
@@ -25,35 +25,21 @@ interface EditPlanModalProps {
   onSuccess?: () => void
 }
 
-const DEFAULT_FEATURES = [
-  'gestao_pacientes',
-  'agenda_basica',
-  'agenda_avancada',
-  'prontuario',
-  'relatorios',
-  'integracao_caleidoscopio',
-  'api_acesso',
-  'suporte_prioritario',
-  'backup_automatico',
-  'dominio_personalizado'
-]
-
-const FEATURE_LABELS = {
-  gestao_pacientes: 'Gestão de Pacientes',
-  agenda_basica: 'Agenda Básica',
-  agenda_avancada: 'Agenda Avançada',
-  prontuario: 'Prontuário Eletrônico',
-  relatorios: 'Relatórios e Análises',
-  integracao_caleidoscopio: 'Integração Caleidoscópio',
-  api_acesso: 'Acesso à API',
-  suporte_prioritario: 'Suporte Prioritário',
-  backup_automatico: 'Backup Automático',
-  dominio_personalizado: 'Domínio Personalizado'
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  isActive: boolean;
 }
 
 export function EditPlanModal({ open, onOpenChange, plan, onSuccess }: EditPlanModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [products, setProducts] = useState<Product[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -62,11 +48,12 @@ export function EditPlanModal({ open, onOpenChange, plan, onSuccess }: EditPlanM
     maxUsers: "",
     price: "",
     isActive: true,
-    features: [] as string[],
+    products: [] as string[],
   })
 
   useEffect(() => {
     if (plan && open) {
+      const planProductIds = plan.planProducts?.map(pp => pp.product.id) || []
       setFormData({
         name: plan.name,
         slug: plan.slug,
@@ -74,11 +61,27 @@ export function EditPlanModal({ open, onOpenChange, plan, onSuccess }: EditPlanM
         maxUsers: plan.maxUsers.toString(),
         price: plan.price?.toString() || "",
         isActive: plan.isActive,
-        features: [...plan.features],
+        products: planProductIds,
       })
       setError("")
+      fetchProducts()
     }
   }, [plan, open])
+
+  const fetchProducts = async () => {
+    try {
+      setLoadingProducts(true)
+      const response = await fetch("/api/products")
+      if (!response.ok) throw new Error("Erro ao carregar produtos")
+
+      const data = await response.json()
+      setProducts(data.products.filter((p: Product) => p.isActive))
+    } catch (error) {
+      console.error("Erro ao carregar produtos:", error)
+    } finally {
+      setLoadingProducts(false)
+    }
+  }
 
   const handleInputChange = (field: string, value: string | boolean) => {
     if (field === "name" && typeof value === "string") {
@@ -108,12 +111,12 @@ export function EditPlanModal({ open, onOpenChange, plan, onSuccess }: EditPlanM
     }
   }
 
-  const handleFeatureToggle = (feature: string, checked: boolean) => {
+  const handleProductToggle = (productId: string, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      features: checked 
-        ? [...prev.features, feature]
-        : prev.features.filter(f => f !== feature)
+      products: checked 
+        ? [...prev.products, productId]
+        : prev.products.filter(p => p !== productId)
     }))
   }
 
@@ -275,28 +278,70 @@ export function EditPlanModal({ open, onOpenChange, plan, onSuccess }: EditPlanM
             </div>
           </div>
 
-          {/* Funcionalidades */}
+          {/* Produtos Incluídos */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Funcionalidades Incluídas</h3>
-            
-            <div className="grid gap-3 md:grid-cols-2">
-              {DEFAULT_FEATURES.map((feature) => (
-                <div key={feature} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={feature}
-                    checked={formData.features.includes(feature)}
-                    onCheckedChange={(checked) => handleFeatureToggle(feature, !!checked)}
-                  />
-                  <Label htmlFor={feature} className="text-sm">
-                    {FEATURE_LABELS[feature as keyof typeof FEATURE_LABELS]}
-                  </Label>
-                </div>
-              ))}
-            </div>
-
+            <h3 className="text-sm font-medium">Produtos do Ecossistema</h3>
             <p className="text-xs text-muted-foreground">
-              Funcionalidades selecionadas: {formData.features.length}
+              Selecione quais produtos estarão disponíveis neste plano
             </p>
+
+            {loadingProducts ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span className="text-sm text-muted-foreground">
+                  Carregando produtos...
+                </span>
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-1">
+                {products.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center space-x-3 p-3 border rounded-lg"
+                  >
+                    <Checkbox
+                      id={product.id}
+                      checked={formData.products.includes(product.id)}
+                      onCheckedChange={(checked) =>
+                        handleProductToggle(product.id, !!checked)
+                      }
+                    />
+                    <div className="flex items-center gap-3 flex-1">
+                      <div
+                        className="p-2 rounded-lg"
+                        style={{
+                          backgroundColor: product.color
+                            ? `${product.color}20`
+                            : "#f1f5f9",
+                          color: product.color || "#64748b",
+                        }}
+                      >
+                        <Package className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <Label
+                          htmlFor={product.id}
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          {product.name}
+                        </Label>
+                        {product.description && (
+                          <p className="text-xs text-muted-foreground">
+                            {product.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!loadingProducts && (
+              <p className="text-xs text-muted-foreground">
+                Produtos selecionados: {formData.products.length}
+              </p>
+            )}
           </div>
 
           {error && (

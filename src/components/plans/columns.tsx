@@ -32,6 +32,17 @@ export interface Plan {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  planProducts?: Array<{
+    id: string
+    product: {
+      id: string
+      name: string
+      slug: string
+      color?: string
+      icon?: string
+    }
+    isActive: boolean
+  }>
   stats: {
     totalTenants: number
   }
@@ -191,19 +202,20 @@ export const createColumns = ({ onView, onEdit, onDelete }: ColumnsProps): Colum
     },
   },
   {
-    accessorKey: "features",
-    header: "Funcionalidades",
+    id: "products",
+    header: "Produtos",
     cell: ({ row }) => {
-      const features = row.getValue("features") as string[]
+      const plan = row.original
+      const products = plan.planProducts?.filter(pp => pp.isActive) || []
       
       return (
         <div className="max-w-[200px]">
           <div className="text-sm font-medium">
-            {features.length} funcionalidades
+            {products.length} produtos
           </div>
           <div className="text-xs text-muted-foreground truncate">
-            {features.slice(0, 2).join(", ")}
-            {features.length > 2 && `, +${features.length - 2}`}
+            {products.slice(0, 2).map(pp => pp.product.name).join(", ")}
+            {products.length > 2 && `, +${products.length - 2}`}
           </div>
         </div>
       )

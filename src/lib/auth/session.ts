@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto'
+import { NextRequest } from 'next/server'
 import { prisma } from '../prisma'
 import { AuthUser, SessionData } from './types'
 
@@ -72,6 +73,18 @@ export async function revokeSession(token: string): Promise<void> {
   await prisma.session.deleteMany({
     where: { token },
   })
+}
+
+// Verificar sessão a partir do request
+export async function verifySession(request: NextRequest): Promise<AuthUser | null> {
+  const token = request.cookies.get('session')?.value
+  
+  if (!token) {
+    return null
+  }
+
+  const sessionData = await validateSession(token)
+  return sessionData?.user || null
 }
 
 // Limpar sessões expiradas

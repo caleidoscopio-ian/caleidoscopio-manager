@@ -12,6 +12,11 @@ export async function GET(request: NextRequest) {
         isActive: true
       },
       include: {
+        planProducts: {
+          include: {
+            product: true
+          }
+        },
         _count: {
           select: {
             tenants: true,
@@ -49,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, description, maxUsers, features, price, isActive } = body
+    const { name, slug, description, maxUsers, products, price, isActive } = body
 
     // Validações básicas
     if (!name || !slug || !maxUsers) {
@@ -69,29 +74,59 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const plan = await prisma.plan.create({
-      data: {
-        name,
-        slug,
-        description,
-        maxUsers: parseInt(maxUsers),
-        features: features || [],
-        price: price ? parseFloat(price) : null,
-        isActive: isActive !== false
-      },
-      include: {
-        _count: {
-          select: {
-            tenants: true,
+    // Usar transação para criar plano e relacionamentos com produtos
+    const result = await prisma.$transaction(async (tx) => {
+      // Criar plano
+      const plan = await tx.plan.create({
+        data: {
+          name,
+          slug,
+          description,
+          maxUsers: parseInt(maxUsers),
+          features: [], // Manter array vazio para compatibilidade
+          price: price ? parseFloat(price) : null,
+          isActive: isActive !== false
+        }
+      })
+
+      // Criar relacionamentos com produtos se fornecidos
+      if (products && Array.isArray(products) && products.length > 0) {
+        const planProductsData = products.map((productId: string) => ({
+          planId: plan.id,
+          productId,
+          isActive: true,
+          config: {} // Configuração padrão vazia
+        }))
+
+        await tx.planProduct.createMany({
+          data: planProductsData
+        })
+      }
+
+      // Buscar plano completo com relacionamentos
+      const planWithRelations = await tx.plan.findUnique({
+        where: { id: plan.id },
+        include: {
+          planProducts: {
+            include: {
+              product: true
+            }
+          },
+          _count: {
+            select: {
+              tenants: true,
+            }
           }
         }
-      }
+      })
+
+      return planWithRelations
     })
 
     const planWithStats = {
-      ...plan,
+      ...result,
       stats: {
-        totalTenants: plan._count.tenants
+        totalTenants: result?._count?.tenants || 0
       }
     }
 

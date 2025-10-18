@@ -17,6 +17,7 @@ import {
   Settings,
   Shield,
   BarChart3,
+  Package,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -60,6 +61,12 @@ const sidebarItems: SidebarItem[] = [
     title: "Planos & Assinaturas",
     href: "/plans",
     icon: CreditCard,
+    superAdminOnly: true,
+  },
+  {
+    title: "Produtos",
+    href: "/products",
+    icon: Package,
     superAdminOnly: true,
   },
   {

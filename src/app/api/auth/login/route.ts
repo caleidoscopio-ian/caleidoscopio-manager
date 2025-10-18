@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Criar resposta com cookie de sessão
     const response = NextResponse.json({
+      success: true,
       user: {
         id: user.id,
         email: user.email,
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
         tenant: user.tenant,
       },
+      token // Retornar token também para sistemas externos
     })
 
     // Definir cookie de sessão
