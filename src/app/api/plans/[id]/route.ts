@@ -4,11 +4,12 @@ import { verifyAuth } from '@/lib/auth/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const plan = await prisma.plan.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: {
@@ -47,7 +48,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticação e se é super admin
@@ -56,27 +57,28 @@ export async function PUT(
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { name, slug, description, maxUsers, products, price, isActive } = body
 
     // Validações básicas
     if (!name || !slug || !maxUsers) {
-      return NextResponse.json({ 
-        error: 'Nome, slug e limite de usuários são obrigatórios' 
+      return NextResponse.json({
+        error: 'Nome, slug e limite de usuários são obrigatórios'
       }, { status: 400 })
     }
 
     // Verificar se slug já existe (exceto para o plano atual)
     const existingPlan = await prisma.plan.findFirst({
-      where: { 
+      where: {
         slug,
-        id: { not: params.id }
+        id: { not: id }
       }
     })
 
     if (existingPlan) {
-      return NextResponse.json({ 
-        error: 'Já existe um plano com este slug' 
+      return NextResponse.json({
+        error: 'Já existe um plano com este slug'
       }, { status: 400 })
     }
 
@@ -84,7 +86,7 @@ export async function PUT(
     const result = await prisma.$transaction(async (tx) => {
       // Atualizar plano
       const plan = await tx.plan.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           name,
           slug,
@@ -151,7 +153,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticação e se é super admin
@@ -160,9 +162,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
+    const { id } = await params
+
     // Verificar se o plano existe
     const existingPlan = await prisma.plan.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: {
@@ -178,8 +182,8 @@ export async function DELETE(
 
     // Verificar se há clínicas usando este plano
     if (existingPlan._count.tenants > 0) {
-      return NextResponse.json({ 
-        error: `Não é possível excluir este plano pois há ${existingPlan._count.tenants} clínica(s) utilizando-o` 
+      return NextResponse.json({
+        error: `Não é possível excluir este plano pois há ${existingPlan._count.tenants} clínica(s) utilizando-o`
       }, { status: 400 })
     }
 
@@ -187,12 +191,12 @@ export async function DELETE(
     await prisma.$transaction(async (tx) => {
       // Excluir relacionamentos com produtos
       await tx.planProduct.deleteMany({
-        where: { planId: params.id }
+        where: { planId: id }
       })
 
       // Excluir plano
       await tx.plan.delete({
-        where: { id: params.id }
+        where: { id }
       })
     })
 

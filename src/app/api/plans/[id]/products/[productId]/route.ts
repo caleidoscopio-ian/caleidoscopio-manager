@@ -5,7 +5,7 @@ import { verifySession } from '@/lib/auth/session'
 // Atualizar associação plano-produto
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string, productId: string } }
+  { params }: { params: Promise<{ id: string, productId: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -13,6 +13,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id, productId } = await params
     const body = await request.json()
     const { config, isActive } = body
 
@@ -20,8 +21,8 @@ export async function PUT(
     const existingPlanProduct = await prisma.planProduct.findUnique({
       where: {
         planId_productId: {
-          planId: params.id,
-          productId: params.productId
+          planId: id,
+          productId: productId
         }
       }
     })
@@ -37,8 +38,8 @@ export async function PUT(
     const planProduct = await prisma.planProduct.update({
       where: {
         planId_productId: {
-          planId: params.id,
-          productId: params.productId
+          planId: id,
+          productId: productId
         }
       },
       data: {
@@ -64,7 +65,7 @@ export async function PUT(
 // Remover associação plano-produto
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string, productId: string } }
+  { params }: { params: Promise<{ id: string, productId: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -72,12 +73,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id, productId } = await params
+
     // Verificar se associação existe
     const existingPlanProduct = await prisma.planProduct.findUnique({
       where: {
         planId_productId: {
-          planId: params.id,
-          productId: params.productId
+          planId: id,
+          productId: productId
         }
       }
     })
@@ -92,10 +95,10 @@ export async function DELETE(
     // Verificar se existem tenants usando este produto através deste plano
     const tenantsUsingProduct = await prisma.tenant.findMany({
       where: {
-        planId: params.id,
+        planId: id,
         tenantProducts: {
           some: {
-            productId: params.productId,
+            productId: productId,
             isActive: true
           }
         }
@@ -104,7 +107,7 @@ export async function DELETE(
 
     if (tenantsUsingProduct.length > 0) {
       return NextResponse.json(
-        { 
+        {
           error: 'Não é possível remover este produto do plano pois existem clínicas utilizando-o',
           tenantsCount: tenantsUsingProduct.length
         },
@@ -116,8 +119,8 @@ export async function DELETE(
     await prisma.planProduct.delete({
       where: {
         planId_productId: {
-          planId: params.id,
-          productId: params.productId
+          planId: id,
+          productId: productId
         }
       }
     })

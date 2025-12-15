@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Sucesso - usuário/clínica tem acesso
-    const response = {
+    const response: any = {
       hasAccess: true,
       product: {
         id: product.id,

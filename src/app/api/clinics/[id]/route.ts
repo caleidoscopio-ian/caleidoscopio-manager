@@ -67,10 +67,10 @@ export async function PUT(
   try {
     const resolvedParams = await params
     const body = await request.json()
-    const { 
-      name, slug, domain, status, maxUsers,
+    const {
+      name, slug, domain, status, maxUsers, planId,
       // Novos campos
-      cnpj, razaoSocial, cep, endereco, cidade, estado 
+      cnpj, razaoSocial, cep, endereco, cidade, estado
     } = body
 
     // Verificar se tenant existe
@@ -99,6 +99,113 @@ export async function PUT(
       }
     }
 
+    // Se planId foi fornecido, verificar se o plano existe e está ativo
+    if (planId && planId !== existingTenant.planId) {
+      const plan = await prisma.plan.findUnique({
+        where: { id: planId },
+        include: {
+          planProducts: {
+            where: { isActive: true },
+            include: {
+              product: true
+            }
+          }
+        }
+      })
+
+      if (!plan) {
+        return NextResponse.json(
+          { error: 'Plano não encontrado' },
+          { status: 404 }
+        )
+      }
+
+      if (!plan.isActive) {
+        return NextResponse.json(
+          { error: 'Plano não está ativo' },
+          { status: 400 }
+        )
+      }
+
+      // Usar transação para atualizar tenant e sincronizar produtos
+      const updatedTenant = await prisma.$transaction(async (tx) => {
+        // Atualizar tenant
+        const tenant = await tx.tenant.update({
+          where: { id: resolvedParams.id },
+          data: {
+            ...(name && { name }),
+            ...(slug && { slug }),
+            ...(domain !== undefined && { domain }),
+            ...(status && { status }),
+            ...(maxUsers && { maxUsers }),
+            planId,
+            // Novos campos
+            ...(cnpj !== undefined && { cnpj }),
+            ...(razaoSocial !== undefined && { razaoSocial }),
+            ...(cep !== undefined && { cep }),
+            ...(endereco !== undefined && { endereco }),
+            ...(cidade !== undefined && { cidade }),
+            ...(estado !== undefined && { estado }),
+          },
+          include: {
+            plan: true,
+            users: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                isActive: true,
+                lastLogin: true,
+              }
+            }
+          }
+        })
+
+        // Desativar produtos antigos que não estão no novo plano
+        await tx.tenantProduct.updateMany({
+          where: {
+            tenantId: resolvedParams.id,
+          },
+          data: {
+            isActive: false
+          }
+        })
+
+        // Ativar/criar produtos do novo plano
+        for (const planProduct of plan.planProducts) {
+          await tx.tenantProduct.upsert({
+            where: {
+              tenantId_productId: {
+                tenantId: resolvedParams.id,
+                productId: planProduct.productId
+              }
+            },
+            update: {
+              isActive: true,
+              config: planProduct.config || {}
+            },
+            create: {
+              tenantId: resolvedParams.id,
+              productId: planProduct.productId,
+              isActive: true,
+              config: planProduct.config || {}
+            }
+          })
+        }
+
+        console.log(`✅ Produtos sincronizados para plano ${plan.name}: ${plan.planProducts.length} produto(s)`)
+
+        return tenant
+      })
+
+      return NextResponse.json({
+        message: 'Clínica atualizada com sucesso',
+        tenant: updatedTenant
+      })
+    }
+
+    // Se planId não foi alterado, atualizar normalmente
     const updatedTenant = await prisma.tenant.update({
       where: { id: resolvedParams.id },
       data: {

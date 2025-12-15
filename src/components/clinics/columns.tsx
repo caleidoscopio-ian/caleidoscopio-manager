@@ -23,8 +23,10 @@ import {
 interface Plan {
   id: string
   name: string
+  slug: string
   maxUsers: number
   price: number | null
+  isActive: boolean
 }
 
 export interface Tenant {

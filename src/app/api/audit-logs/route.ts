@@ -4,14 +4,14 @@ import { verifyAuth } from '@/lib/auth/server'
 
 export async function GET(request: NextRequest) {
   try {
-    // Verificar autenticação e se é super admin
+    // Verificar autenticação
     const auth = await verifyAuth(request)
-    if (!auth || auth.user.role !== 'SUPER_ADMIN') {
+    if (!auth) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
-    
+
     // Parâmetros de filtro
     const action = searchParams.get('action')
     const userId = searchParams.get('userId')
@@ -32,13 +32,16 @@ export async function GET(request: NextRequest) {
         { tenantId: auth.user.tenantId },
         { tenantId: null } // Ações globais que afetam todos
       ]
-    } else if (tenantId) {
+    } else if (auth.user.role === 'SUPER_ADMIN' && tenantId) {
       // Super Admin pode filtrar por tenant específico
       if (tenantId === 'global') {
         whereClause.tenantId = null
       } else {
         whereClause.tenantId = tenantId
       }
+    } else if (auth.user.role !== 'SUPER_ADMIN') {
+      // Outros usuários não têm acesso
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
     if (action) {
@@ -98,7 +101,7 @@ export async function GET(request: NextRequest) {
     ])
 
     // Buscar informações dos usuários relacionados
-    const userIds = [...new Set(logs.map(log => log.userId).filter(Boolean))]
+    const userIds = [...new Set(logs.map(log => log.userId).filter((id): id is string => id !== null))]
     const users = await prisma.user.findMany({
       where: {
         id: { in: userIds }
@@ -119,7 +122,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Buscar informações dos tenants relacionados
-    const tenantIds = [...new Set(logs.map(log => log.tenantId).filter(Boolean))]
+    const tenantIds = [...new Set(logs.map(log => log.tenantId).filter((id): id is string => id !== null))]
     const tenants = await prisma.tenant.findMany({
       where: {
         id: { in: tenantIds }

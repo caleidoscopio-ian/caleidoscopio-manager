@@ -145,29 +145,18 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-sm font-medium">Membro desde</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(user?.createdAt || new Date().toISOString())}
+                      {formatDate(new Date().toISOString())}
                     </p>
                   </div>
                 </div>
 
-                {user?.lastLogin && (
-                  <div className="flex items-center space-x-3">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Último acesso</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(user.lastLogin)}
-                      </p>
-                    </div>
-                  </div>
-                )}
 
                 <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Status da conta</p>
                     <Badge variant="default" className="text-xs">
-                      {user?.isActive ? "Ativa" : "Inativa"}
+                      Ativa
                     </Badge>
                   </div>
                 </div>

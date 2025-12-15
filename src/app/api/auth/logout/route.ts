@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       redirectUrl = returnUrl
     } else if (redirect) {
       // URLs dos sistemas baseado no produto
-      const systemUrls = {
+      const systemUrls: Record<string, string> = {
         'educational': 'http://localhost:3001/login',
         'ecommerce': 'http://localhost:3002/login',
         'telemedicine': 'http://localhost:3003/login'

@@ -157,18 +157,6 @@ export async function GET(request: NextRequest) {
           take: 5,
           orderBy: {
             createdAt: 'desc'
-          },
-          include: {
-            user: {
-              select: {
-                name: true
-              }
-            },
-            tenant: {
-              select: {
-                name: true
-              }
-            }
           }
         })
         
@@ -177,7 +165,7 @@ export async function GET(request: NextRequest) {
         recentActivity = recentLogs.map(log => ({
           id: log.id,
           action: log.action,
-          description: getActivityDescription(log.action, log.user?.name, log.tenant?.name),
+          description: getActivityDescription(log.action),
           createdAt: log.createdAt.toISOString(),
           type: getActivityType(log.action)
         }))
@@ -193,22 +181,15 @@ export async function GET(request: NextRequest) {
               { tenantId: user.tenantId },
               { tenantId: null, userId: user.id }
             ]
-          },
-          include: {
-            user: {
-              select: {
-                name: true
-              }
-            }
           }
         })
-        
+
         console.log('Admin recent logs found:', recentLogs.length)
 
         recentActivity = recentLogs.map(log => ({
           id: log.id,
           action: log.action,
-          description: getActivityDescription(log.action, log.user?.name),
+          description: getActivityDescription(log.action),
           createdAt: log.createdAt.toISOString(),
           type: getActivityType(log.action)
         }))

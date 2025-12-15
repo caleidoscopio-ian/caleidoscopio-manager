@@ -20,12 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Loader2, Building2 } from "lucide-react"
+import { useAuth } from "@/lib/auth/hooks"
 
 interface Plan {
   id: string
   name: string
+  slug: string
   maxUsers: number
   price: number | null
+  isActive: boolean
 }
 
 interface Tenant {
@@ -36,6 +39,12 @@ interface Tenant {
   status: "ACTIVE" | "SUSPENDED" | "INACTIVE"
   maxUsers: number
   plan: Plan
+  cnpj?: string | null
+  razaoSocial?: string | null
+  cep?: string | null
+  endereco?: string | null
+  cidade?: string | null
+  estado?: string | null
 }
 
 interface EditClinicModalProps {
@@ -46,15 +55,19 @@ interface EditClinicModalProps {
 }
 
 export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditClinicModalProps) {
+  const { isSuperAdmin } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [availablePlans, setAvailablePlans] = useState<Plan[]>([])
+  const [loadingPlans, setLoadingPlans] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     domain: "",
-    status: "ACTIVE" as const,
+    status: "ACTIVE" as "ACTIVE" | "SUSPENDED" | "INACTIVE",
     maxUsers: "",
+    planId: "",
     // Novos campos
     cnpj: "",
     razaoSocial: "",
@@ -72,6 +85,7 @@ export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditC
         domain: tenant.domain || "",
         status: tenant.status,
         maxUsers: tenant.maxUsers.toString(),
+        planId: tenant.plan.id,
         // Novos campos (com valores padrão se não existirem)
         cnpj: tenant.cnpj || "",
         razaoSocial: tenant.razaoSocial || "",
@@ -82,6 +96,30 @@ export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditC
       })
     }
   }, [tenant, open])
+
+  useEffect(() => {
+    if (open && isSuperAdmin) {
+      fetchPlans()
+    }
+  }, [open, isSuperAdmin])
+
+  const fetchPlans = async () => {
+    try {
+      setLoadingPlans(true)
+      const response = await fetch('/api/plans')
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar planos')
+      }
+
+      const data = await response.json()
+      setAvailablePlans(data.plans || [])
+    } catch (error) {
+      console.error('Erro ao buscar planos:', error)
+    } finally {
+      setLoadingPlans(false)
+    }
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -115,6 +153,7 @@ export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditC
         body: JSON.stringify({
           ...formData,
           maxUsers: formData.maxUsers ? parseInt(formData.maxUsers) : undefined,
+          planId: formData.planId || undefined,
         }),
       })
 
@@ -312,13 +351,50 @@ export function EditClinicModal({ open, onOpenChange, tenant, onSuccess }: EditC
             </div>
           </div>
 
-          {/* Info do Plano (somente leitura) */}
-          <div className="rounded-lg bg-muted p-3">
-            <p className="text-sm font-medium">Plano Atual: {tenant?.plan.name}</p>
-            <p className="text-xs text-muted-foreground">
-              Para alterar o plano, entre em contato com o suporte
-            </p>
-          </div>
+          {/* Plano - Editável apenas para Super Admin */}
+          {isSuperAdmin ? (
+            <div className="space-y-2">
+              <Label htmlFor="edit-plan">Plano *</Label>
+              <Select
+                value={formData.planId}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, planId: value }))
+                  // Atualizar maxUsers baseado no plano selecionado
+                  const selectedPlan = availablePlans.find(p => p.id === value)
+                  if (selectedPlan) {
+                    setFormData(prev => ({
+                      ...prev,
+                      maxUsers: selectedPlan.maxUsers.toString()
+                    }))
+                  }
+                }}
+                disabled={loadingPlans}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingPlans ? "Carregando planos..." : "Selecione um plano"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePlans
+                    .filter(plan => plan.isActive)
+                    .map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name} - {plan.price ? `R$ ${plan.price}` : 'Gratuito'} ({plan.maxUsers} usuários)
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                O plano define os produtos disponíveis e o limite de usuários
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg bg-muted p-3">
+              <p className="text-sm font-medium">Plano Atual: {tenant?.plan.name}</p>
+              <p className="text-xs text-muted-foreground">
+                Apenas o Super Admin pode alterar o plano
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-md bg-destructive/10 p-3">

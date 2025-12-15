@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
     // Admin só vê sua própria clínica, Super Admin vê todas
-    const whereClause = auth.user.role === 'ADMIN' ? { id: auth.user.tenantId } : {}
+    const whereClause = auth.user.role === 'ADMIN' && auth.user.tenantId ? { id: auth.user.tenantId } : {}
     
     const tenants = await prisma.tenant.findMany({
       where: whereClause,

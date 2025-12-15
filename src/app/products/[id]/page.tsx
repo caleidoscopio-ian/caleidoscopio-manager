@@ -610,7 +610,6 @@ export default function ProductEditPage() {
                       <div key={tenantProduct.id} className="flex items-center justify-between p-2 border rounded text-xs">
                         <span>{tenantProduct.tenant.name}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">{tenantProduct.accessCount} acessos</span>
                           <Badge variant={tenantProduct.isActive ? "default" : "secondary"} className="text-xs">
                             {tenantProduct.isActive ? "Ativo" : "Inativo"}
                           </Badge>

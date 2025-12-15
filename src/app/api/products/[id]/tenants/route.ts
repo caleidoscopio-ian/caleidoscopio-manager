@@ -5,7 +5,7 @@ import { verifySession } from '@/lib/auth/session'
 // Ativar produto para um tenant
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -13,6 +13,7 @@ export async function POST(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { tenantId, config } = body
 
@@ -25,7 +26,7 @@ export async function POST(
 
     // Verificar se produto e tenant existem
     const [product, tenant] = await Promise.all([
-      prisma.product.findUnique({ where: { id: params.id } }),
+      prisma.product.findUnique({ where: { id } }),
       prisma.tenant.findUnique({ where: { id: tenantId } })
     ])
 
@@ -41,7 +42,7 @@ export async function POST(
     const planProduct = await prisma.planProduct.findFirst({
       where: {
         planId: tenant.planId,
-        productId: params.id,
+        productId: id,
         isActive: true
       }
     })
@@ -58,7 +59,7 @@ export async function POST(
       where: {
         tenantId_productId: {
           tenantId,
-          productId: params.id
+          productId: id
         }
       }
     })
@@ -74,7 +75,7 @@ export async function POST(
     const tenantProduct = await prisma.tenantProduct.create({
       data: {
         tenantId,
-        productId: params.id,
+        productId: id,
         config: config || product.defaultConfig
       },
       include: {
@@ -96,7 +97,7 @@ export async function POST(
 // Listar tenants com acesso ao produto
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -104,8 +105,9 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const tenantProducts = await prisma.tenantProduct.findMany({
-      where: { productId: params.id },
+      where: { productId: id },
       include: {
         tenant: {
           include: {

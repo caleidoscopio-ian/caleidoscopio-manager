@@ -97,7 +97,7 @@ export async function createTenant(
   // Hash da senha
   const hashedPassword = await hashPassword(adminPassword);
 
-  // Transação para criar tenant e admin
+  // Transação para criar tenant, admin e ativar produtos do plano
   const result = await prisma.$transaction(async (tx) => {
     // Criar tenant
     const tenant = await tx.tenant.create({
@@ -115,7 +115,18 @@ export async function createTenant(
         ...(estado && { estado }),
       },
       include: {
-        plan: true,
+        plan: {
+          include: {
+            planProducts: {
+              where: {
+                isActive: true
+              },
+              include: {
+                product: true
+              }
+            }
+          }
+        },
       },
     });
 
@@ -129,6 +140,22 @@ export async function createTenant(
         tenantId: tenant.id,
       },
     });
+
+    // Ativar produtos do plano para o tenant
+    if (tenant.plan.planProducts.length > 0) {
+      const tenantProductsData = tenant.plan.planProducts.map((planProduct) => ({
+        tenantId: tenant.id,
+        productId: planProduct.productId,
+        isActive: true,
+        config: planProduct.config || {}, // Herda config do plano
+      }));
+
+      await tx.tenantProduct.createMany({
+        data: tenantProductsData,
+      });
+
+      console.log(`✅ ${tenantProductsData.length} produto(s) ativado(s) para ${tenant.name}`);
+    }
 
     return { tenant, admin };
   });

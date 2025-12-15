@@ -5,7 +5,7 @@ import { verifySession } from '@/lib/auth/session'
 // Buscar produtos disponíveis para um tenant
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -13,14 +13,16 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // Verificar se o usuário tem acesso ao tenant
-    if (sessionUser.role !== 'SUPER_ADMIN' && sessionUser.tenantId !== params.id) {
+    if (sessionUser.role !== 'SUPER_ADMIN' && sessionUser.tenantId !== id) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
     // Buscar tenant com plano
     const tenant = await prisma.tenant.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         plan: {
           include: {

@@ -5,7 +5,7 @@ import { hashPassword } from '@/lib/auth/password'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticação
@@ -14,8 +14,9 @@ export async function GET(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    const { id } = await params
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         tenant: {
           select: {
@@ -86,7 +87,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticação
@@ -95,12 +96,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { email, name, password, role, tenantId, isActive } = body
 
     // Verificar se o usuário existe
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         tenant: true
       }
@@ -203,7 +205,7 @@ export async function PUT(
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         tenant: {
@@ -247,7 +249,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticação e se é admin
@@ -256,9 +258,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
+    const { id } = await params
+
     // Verificar se o usuário existe
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         tenant: true
       }
@@ -292,7 +296,7 @@ export async function DELETE(
     }
 
     await prisma.user.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ message: 'Usuário excluído com sucesso' })

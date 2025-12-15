@@ -5,7 +5,7 @@ import { verifySession } from '@/lib/auth/session'
 // Listar produtos associados ao plano
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -13,8 +13,10 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const planProducts = await prisma.planProduct.findMany({
-      where: { planId: params.id },
+      where: { planId: id },
       include: {
         product: true,
         plan: true
@@ -35,7 +37,7 @@ export async function GET(
 // Associar produto ao plano
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -43,6 +45,7 @@ export async function POST(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { productId, config, isActive = true } = body
 
@@ -55,7 +58,7 @@ export async function POST(
 
     // Verificar se plano e produto existem
     const [plan, product] = await Promise.all([
-      prisma.plan.findUnique({ where: { id: params.id } }),
+      prisma.plan.findUnique({ where: { id } }),
       prisma.product.findUnique({ where: { id: productId } })
     ])
 
@@ -71,7 +74,7 @@ export async function POST(
     const existingPlanProduct = await prisma.planProduct.findUnique({
       where: {
         planId_productId: {
-          planId: params.id,
+          planId: id,
           productId
         }
       }
@@ -87,7 +90,7 @@ export async function POST(
     // Criar associação
     const planProduct = await prisma.planProduct.create({
       data: {
-        planId: params.id,
+        planId: id,
         productId,
         config,
         isActive

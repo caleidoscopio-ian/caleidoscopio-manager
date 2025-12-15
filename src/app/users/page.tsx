@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, Users, UserPlus, Shield, Building2, UserCheck } from "lucide-react"
+import { Loader2, Users, UserPlus, Shield, Building2, UserCheck, RefreshCw } from "lucide-react"
 import { CreateUserModal } from "@/components/users/create-user-modal"
 import { EditUserModal } from "@/components/users/edit-user-modal"
 import { DeleteUserModal } from "@/components/users/delete-user-modal"
@@ -40,6 +40,7 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isAdmin)) {
@@ -55,31 +56,42 @@ export default function UsersPage() {
     }
   }, [authLoading, isAuthenticated, isAdmin, isSuperAdmin, router, selectedTenant])
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (silent = false) => {
     try {
-      setLoading(true)
+      if (!silent) {
+        setLoading(true)
+      } else {
+        setIsRefreshing(true)
+      }
+
       const params = new URLSearchParams({
         includeInactive: 'true'
       })
-      
+
       if (selectedTenant !== "all") {
         params.append('tenantId', selectedTenant)
       }
 
       const response = await fetch(`/api/users?${params}`)
-      
+
       if (!response.ok) {
         throw new Error("Erro ao carregar usuários")
       }
 
       const data: UsersResponse = await response.json()
       setUsers(data.users)
+      setError("") // Limpar erro após sucesso
     } catch (error) {
       console.error("Erro ao buscar usuários:", error)
       setError("Erro ao carregar usuários")
     } finally {
       setLoading(false)
+      setIsRefreshing(false)
     }
+  }
+
+  const handleRefresh = () => {
+    fetchUsers(true)
   }
 
   const fetchTenants = async () => {
@@ -157,6 +169,15 @@ export default function UsersPage() {
                 </SelectContent>
               </Select>
             )}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Atualizar lista"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
             <Button className="gap-2" onClick={() => setShowCreateModal(true)}>
               <UserPlus className="h-4 w-4" />
               Novo Usuário
@@ -249,7 +270,7 @@ export default function UsersPage() {
             ) : error ? (
               <div className="text-center py-16">
                 <p className="text-destructive mb-4">{error}</p>
-                <Button onClick={fetchUsers} variant="outline">
+                <Button onClick={() => fetchUsers()} variant="outline">
                   Tentar Novamente
                 </Button>
               </div>

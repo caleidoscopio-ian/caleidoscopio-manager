@@ -38,6 +38,7 @@ export interface Plan {
       id: string
       name: string
       slug: string
+      description?: string | null
       color?: string
       icon?: string
     }

@@ -5,7 +5,7 @@ import { verifySession } from '@/lib/auth/session'
 // Atualizar configuração de produto para tenant
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string, productId: string } }
+  { params }: { params: Promise<{ id: string, productId: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -13,6 +13,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id, productId } = await params
     const body = await request.json()
     const { config, isActive } = body
 
@@ -20,8 +21,8 @@ export async function PUT(
     const existingTenantProduct = await prisma.tenantProduct.findUnique({
       where: {
         tenantId_productId: {
-          tenantId: params.id,
-          productId: params.productId
+          tenantId: id,
+          productId: productId
         }
       }
     })
@@ -37,8 +38,8 @@ export async function PUT(
     const tenantProduct = await prisma.tenantProduct.update({
       where: {
         tenantId_productId: {
-          tenantId: params.id,
-          productId: params.productId
+          tenantId: id,
+          productId: productId
         }
       },
       data: {
@@ -64,7 +65,7 @@ export async function PUT(
 // Remover produto de tenant
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string, productId: string } }
+  { params }: { params: Promise<{ id: string, productId: string }> }
 ) {
   try {
     const sessionUser = await verifySession(request)
@@ -72,12 +73,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id, productId } = await params
+
     // Verificar se associação existe
     const existingTenantProduct = await prisma.tenantProduct.findUnique({
       where: {
         tenantId_productId: {
-          tenantId: params.id,
-          productId: params.productId
+          tenantId: id,
+          productId: productId
         }
       }
     })
@@ -92,9 +95,9 @@ export async function DELETE(
     // Revogar todos os tokens SSO ativos para este produto/tenant
     await prisma.productToken.updateMany({
       where: {
-        productId: params.productId,
+        productId: productId,
         user: {
-          tenantId: params.id
+          tenantId: id
         },
         isRevoked: false
       },
@@ -107,8 +110,8 @@ export async function DELETE(
     await prisma.tenantProduct.delete({
       where: {
         tenantId_productId: {
-          tenantId: params.id,
-          productId: params.productId
+          tenantId: id,
+          productId: productId
         }
       }
     })
