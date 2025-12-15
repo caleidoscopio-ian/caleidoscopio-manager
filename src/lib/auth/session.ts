@@ -97,3 +97,33 @@ export async function cleanupExpiredSessions(): Promise<void> {
     },
   })
 }
+// Verificar sessão a partir de cookie OU token Bearer (para cross-domain SSO)
+export async function verifySessionOrBearer(request: NextRequest): Promise<AuthUser | null> {
+  // Tentar primeiro com cookie (desenvolvimento localhost)
+  const cookieToken = request.cookies.get('session')?.value
+
+  if (cookieToken) {
+    const sessionData = await validateSession(cookieToken)
+    if (sessionData?.user) {
+      console.log('✅ Autenticado via cookie de sessão')
+      return sessionData.user
+    }
+  }
+
+  // Tentar com Bearer token (produção cross-domain)
+  const authHeader = request.headers.get('Authorization')
+
+  if (authHeader?.startsWith('Bearer ')) {
+    const bearerToken = authHeader.substring(7)
+
+    // Validar token Bearer como se fosse um token de sessão
+    const sessionData = await validateSession(bearerToken)
+    if (sessionData?.user) {
+      console.log('✅ Autenticado via Bearer token')
+      return sessionData.user
+    }
+  }
+
+  console.log('❌ Nenhuma autenticação válida encontrada (cookie ou Bearer)')
+  return null
+}

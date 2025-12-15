@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifySession } from '@/lib/auth/session'
+import { verifySessionOrBearer } from '@/lib/auth/session'
 import jwt from 'jsonwebtoken'
 
 // Gerar token SSO para acesso ao produto
@@ -9,10 +9,13 @@ export async function POST(
   { params }: { params: Promise<{ productSlug: string }> }
 ) {
   try {
-    const sessionUser = await verifySession(request)
+    const sessionUser = await verifySessionOrBearer(request)
     if (!sessionUser) {
+      console.log('❌ SSO: Autenticação falhou')
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+
+    console.log('✅ SSO: Usuário autenticado:', sessionUser.email)
 
     // Aguardar params (necessário no Next.js 15)
     const resolvedParams = await params
