@@ -20,11 +20,11 @@ export async function middleware(request: NextRequest) {
 
   // Permitir requests do sistema educacional e outros produtos
   const allowedOrigins = [
-    "http://localhost:3001", // Sistema Educacional
-    process.env.EDUCATIONAL_SYSTEM_URL,
+    "http://localhost:3001", // Sistema Educacional (dev)
+    process.env.EDUCATIONAL_SYSTEM_URL, // Sistema Educacional (produção)
     "http://localhost:3002", // Sistema E-commerce (futuro)
     "http://localhost:3003", // Sistema Telemedicina (futuro)
-  ];
+  ].filter(Boolean); // Remove undefined/null
 
   const origin = request.headers.get("origin");
   if (origin && allowedOrigins.includes(origin)) {
