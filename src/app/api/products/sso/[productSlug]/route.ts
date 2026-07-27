@@ -64,7 +64,7 @@ export async function POST(
       productId: product.id,
       productSlug: product.slug,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hora
+      exp: Math.floor(Date.now() / 1000) + (2 * 60 * 60) // 2 horas
     }
 
     const secret = process.env.JWT_SECRET || 'default-secret'
@@ -76,7 +76,7 @@ export async function POST(
         token,
         userId: sessionUser.id,
         productId: product.id,
-        expiresAt: new Date(Date.now() + (60 * 60 * 1000)) // 1 hora
+        expiresAt: new Date(Date.now() + (2 * 60 * 60 * 1000)) // 2 horas
       }
     })
 
@@ -101,7 +101,7 @@ export async function POST(
     return NextResponse.json({
       token,
       redirectUrl,
-      expiresIn: 3600 // 1 hora em segundos
+      expiresIn: 7200 // 2 horas em segundos
     })
   } catch (error) {
     console.error('Erro ao gerar token SSO:', error)
